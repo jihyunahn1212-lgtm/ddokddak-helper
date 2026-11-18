@@ -194,10 +194,10 @@
       </div>
       <div class="tag" style="margin:4px 0 12px">저장은 이 브라우저 안에만 돼요 (원본 파일 내용은 저장하지 않고, 일자 수정·제외·추가 항목·심사완료 체크·입력값만 저장해요) · Ctrl+S로도 저장돼요 · 브라우저가 저장을 막고 있으면 작업 파일(.json)로 다운로드되고, 📁로 다시 불러올 수 있어요</div>
       <div id="cloudbox" class="finalrow hidden" style="margin:0 0 12px">
-        <label class="must">☁️ 클라우드 저장 (선택 · Supabase)</label>
+        <label class="must">☁️ 클라우드 저장 (선택)</label>
         <div id="cloudout" class="line"></div>
         <div id="cloudmsg" style="margin-top:8px;font-size:14px"></div>
-        <div class="tag" style="margin-top:6px">로그인해서 저장하면 <b>작업 내용</b>(일자 수정·제외한 행·추가 항목·체크·입력값)이 Supabase 서버에 저장돼요. 원본 엑셀 내용은 보내지 않아요. 이 사이트는 <b>포트폴리오 데모</b>이니 <b>가짜 데이터만</b> 쓰세요.</div>
+        <div class="tag" style="margin-top:6px">로그인 없이 쓸 수 있어요. 저장한 작업은 <b>이 브라우저 전용 저장공간</b>에 보관돼서, 같은 브라우저에서 같은 파일을 올리면 불러올 수 있어요. 원본 엑셀 내용은 보내지 않고 <b>일자 수정·제외한 행·추가 항목·체크·입력값</b>만 저장해요.</div>
       </div>
       <div class="btns">
         <button class="b1" id="dl">엑셀로 내려받기</button>
@@ -555,7 +555,7 @@
     const cands = [];
     const lw = store.get('work', {})[fp];
     if (lw) cands.push({ w: lw, src: '이 브라우저' });
-    if (sbSession()) {
+    if (cloudPref && sbSession()) {
       try { const cw = await cloudFetch(); if (cw) cands.push({ w: cw, src: '클라우드(Supabase)' }); }
       catch (e) { cloudMsg('⚠️ 클라우드 불러오기 실패: ' + e.message, true); }
       if (myFp !== fp) return; // 기다리는 사이 다른 파일로 바뀜
@@ -588,13 +588,14 @@
   document.addEventListener('keydown', (e) => { if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) { e.preventDefault(); saveWork(); } });
   window.addEventListener('beforeunload', (e) => { if (dirty && table) { e.preventDefault(); e.returnValue = ''; } });
 
-  // ---- Supabase (선택): 로그인한 경우에만 '작업 내용'을 클라우드에 저장 ----
+  // ---- Supabase (선택): 로그인 없이(익명 로그인) '작업 내용'을 클라우드에도 저장 ----
   // 아래 두 값이 비어 있으면 클라우드 기능은 화면에 나타나지 않고, 어떤 통신도 하지 않는다.
   const SUPABASE_URL = 'https://ymxahyxwladebgmuzmvt.supabase.co';  // Supabase 프로젝트 주소(vercel.json의 connect-src와 같아야 함)
   const SUPABASE_KEY = 'sb_publishable_e6E0DexEGsZJwqzdMhdPeA_9E6lw2sg';  // 공개용(anon / publishable) 키만 넣는다. service_role·secret 키는 절대 넣지 말 것!
   const cloudOn = !!(SUPABASE_URL && SUPABASE_KEY);
   let sess = null, cloudPref = true;
   try { sess = JSON.parse(localStorage.getItem('ddokddak.sb') || 'null'); } catch (e) { sess = null; }
+  try { const p = localStorage.getItem('ddokddak.cloudpref'); if (p !== null) cloudPref = p === '1'; } catch (e) { /* 기본값 사용 */ }
   const sbSession = () => (cloudOn && sess && sess.access_token ? sess : null);
   function setSess(s) {
     sess = s;
@@ -604,25 +605,22 @@
     return {
       access_token: j.access_token, refresh_token: j.refresh_token,
       expires_at: j.expires_at || Math.floor(Date.now() / 1000) + (j.expires_in || 3600),
-      user: { id: j.user && j.user.id, email: j.user && j.user.email },
+      user: { id: j.user && j.user.id },
     };
   }
   function sbErr(j, status) {
     const code = (j && (j.error_code || j.code)) || '';
     const map = {
-      invalid_credentials: '이메일 또는 비밀번호가 맞지 않아요',
-      email_not_confirmed: '메일 인증이 아직이에요. 받은 메일의 링크를 먼저 눌러 주세요',
-      user_already_exists: '이미 가입된 이메일이에요. 로그인해 주세요',
-      weak_password: '비밀번호가 너무 약해요 (6자 이상으로 해 주세요)',
-      signup_disabled: '지금은 회원가입이 닫혀 있어요',
-      over_email_send_rate_limit: '메일을 너무 자주 보냈어요. 잠시 뒤에 다시 해 주세요',
-      validation_failed: '이메일 형식을 확인해 주세요',
+      anonymous_provider_disabled: "Supabase에서 '익명 로그인'이 꺼져 있어요 (Authentication → Sign In / Providers → Allow anonymous sign-ins를 켜 주세요)",
+      captcha_failed: 'Supabase에 CAPTCHA 설정이 켜져 있어서 익명 로그인이 막혔어요',
+      over_request_rate_limit: '요청이 너무 많아요. 잠시 뒤에 다시 해 주세요',
+      signup_disabled: '지금은 새 저장공간을 만들 수 없어요 (Supabase 가입이 닫혀 있어요)',
       PGRST205: '저장 테이블이 아직 없어요 (supabase/schema.sql을 먼저 실행해 주세요)',
       '42P01': '저장 테이블이 아직 없어요 (supabase/schema.sql을 먼저 실행해 주세요)',
       '42501': '저장 권한이 없어요 (supabase/schema.sql의 접근 제한 설정을 확인해 주세요)',
     };
     if (map[code]) return map[code];
-    if (status === 401 || status === 403) return '로그인이 만료됐거나 권한이 없어요. 다시 로그인해 주세요';
+    if (status === 401 || status === 403) return '권한이 없거나 연결이 만료됐어요. 잠시 뒤에 다시 시도해 주세요';
     return (j && (j.msg || j.message || j.error_description || j.error)) || ('오류 ' + status);
   }
   async function sbCall(path, opts, token) {
@@ -636,14 +634,22 @@
     try { j = await res.json(); } catch (e) { j = null; }
     return { res, j };
   }
+  // 익명 로그인: 이메일·비밀번호 없이 이 브라우저 전용 저장공간(익명 사용자)을 만든다. 처음 저장할 때 한 번만 일어난다.
+  async function sbAnon() {
+    const { res, j } = await sbCall('/auth/v1/signup', { method: 'POST', body: JSON.stringify({ data: {} }) });
+    if (!res.ok || !j || !j.access_token) throw new Error(sbErr(j, res.status));
+    setSess(toSession(j));
+    renderCloud();
+  }
+  async function ensureSession() { if (!sbSession()) await sbAnon(); }
   async function sbRefresh() {
-    if (!sess || !sess.refresh_token) { setSess(null); renderCloud(); throw new Error('다시 로그인해 주세요'); }
+    if (!sess || !sess.refresh_token) { setSess(null); throw new Error('연결이 만료됐어요. 다시 저장하면 새 저장공간이 만들어져요'); }
     const { res, j } = await sbCall('/auth/v1/token?grant_type=refresh_token', { method: 'POST', body: JSON.stringify({ refresh_token: sess.refresh_token }) });
-    if (!res.ok || !j || !j.access_token) { setSess(null); renderCloud(); throw new Error('로그인이 만료됐어요. 다시 로그인해 주세요'); }
+    if (!res.ok || !j || !j.access_token) { setSess(null); renderCloud(); throw new Error('연결이 만료됐어요. 다시 저장하면 새 저장공간이 만들어져요'); }
     setSess(toSession(j));
   }
   async function sbAuthed(path, opts) { // 만료됐거나 401이면 한 번만 갱신해서 다시 시도
-    if (!sbSession()) throw new Error('로그인이 필요해요');
+    await ensureSession();
     if (sess.expires_at - 30 < Date.now() / 1000) await sbRefresh();
     let r = await sbCall(path, opts, sess.access_token);
     if (r.res.status === 401) { await sbRefresh(); r = await sbCall(path, opts, sess.access_token); }
@@ -655,6 +661,7 @@
     return Array.from(new Uint8Array(b)).map((x) => x.toString(16).padStart(2, '0')).join('');
   }
   async function cloudSave(data) {
+    await ensureSession(); // 요청 내용에 사용자 id가 들어가므로, 저장공간이 먼저 있어야 한다
     const key = await sha256(fp);
     const { res, j } = await sbAuthed('/rest/v1/work_saves?on_conflict=user_id,fp', {
       method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
@@ -662,14 +669,19 @@
     });
     if (!res.ok) throw new Error(sbErr(j, res.status));
   }
-  async function cloudFetch() {
+  async function cloudFetch() { // 이미 저장공간(세션)이 있는 브라우저에서만 호출한다(방문만 해서는 아무것도 만들지 않음)
     const key = await sha256(fp);
     const { res, j } = await sbAuthed('/rest/v1/work_saves?select=data&limit=1&fp=eq.' + encodeURIComponent(key), { method: 'GET' });
     if (!res.ok) throw new Error(sbErr(j, res.status));
     return Array.isArray(j) && j[0] ? j[0].data : null;
   }
+  async function cloudDelete() {
+    const key = await sha256(fp);
+    const { res, j } = await sbAuthed('/rest/v1/work_saves?fp=eq.' + encodeURIComponent(key), { method: 'DELETE' });
+    if (!res.ok) throw new Error(sbErr(j, res.status));
+  }
   async function cloudSaveIfOn(data) {
-    if (!sbSession() || !cloudPref) return;
+    if (!cloudOn || !cloudPref) return;
     const m = $('cloudmsg');
     m.style.color = 'var(--sub)'; m.textContent = '☁️ 클라우드에 저장하는 중…';
     try {
@@ -680,44 +692,28 @@
     }
   }
   function cloudMsg(t, bad) { const m = $('cloudmsg'); m.style.color = bad ? '#B2402F' : 'var(--ink)'; m.textContent = t; }
-  async function cloudAuth(kind) {
-    const email = $('cemail').value.trim(), pw = $('cpw').value;
-    if (!email || !pw) return cloudMsg('이메일과 비밀번호를 입력해 주세요', true);
-    cloudMsg(kind === 'login' ? '로그인하는 중…' : '가입하는 중…');
-    try {
-      const path = kind === 'login' ? '/auth/v1/token?grant_type=password' : '/auth/v1/signup';
-      const { res, j } = await sbCall(path, { method: 'POST', body: JSON.stringify({ email, password: pw }) });
-      if (!res.ok) return cloudMsg('⚠️ ' + sbErr(j, res.status), true);
-      if (j && j.access_token) {
-        setSess(toSession(j)); renderCloud();
-        cloudMsg('✅ 로그인했어요');
-        showRestore();
-      } else {
-        cloudMsg('📧 확인 메일을 보냈어요. 메일의 링크를 누른 뒤 로그인해 주세요.');
-      }
-    } catch (e) { cloudMsg('⚠️ ' + e.message, true); }
-  }
   function renderCloud() {
     const box = $('cloudbox');
     if (!cloudOn) { box.classList.add('hidden'); return; }
     box.classList.remove('hidden');
-    const out = $('cloudout');
+    $('cloudout').innerHTML =
+      '<label style="display:flex;gap:8px;align-items:center;color:var(--ink);font-size:15px"><input type="checkbox" id="ccloud"' + (cloudPref ? ' checked' : '') + '> 💾 저장할 때 클라우드(Supabase)에도 저장</label>' +
+      (sbSession() ? '<button class="b2 small" id="cdel">이 파일의 클라우드 저장본 삭제</button><button class="b3 small" id="cdisc">이 브라우저의 클라우드 연결 끊기</button>' : '');
+    $('ccloud').addEventListener('change', () => {
+      cloudPref = $('ccloud').checked;
+      try { localStorage.setItem('ddokddak.cloudpref', cloudPref ? '1' : '0'); } catch (e) { /* 저장 불가 환경 */ }
+      cloudMsg(cloudPref ? '클라우드 저장을 켰어요' : '클라우드 저장을 껐어요 (이 브라우저에만 저장돼요)');
+    });
     if (sbSession()) {
-      out.innerHTML = '<span>로그인: <b>' + esc(sess.user.email || '') + '</b></span>' +
-        '<label style="display:flex;gap:6px;align-items:center;color:var(--ink);font-size:14px"><input type="checkbox" id="ccloud"' + (cloudPref ? ' checked' : '') + '> 💾 저장할 때 클라우드에도 저장</label>' +
-        '<button class="b2 small" id="clogout">로그아웃</button>';
-      $('ccloud').addEventListener('change', () => { cloudPref = $('ccloud').checked; });
-      $('clogout').addEventListener('click', async () => {
-        try { if (sess) await sbCall('/auth/v1/logout', { method: 'POST' }, sess.access_token); } catch (e) { /* 로그아웃은 항상 진행 */ }
-        setSess(null); renderCloud(); cloudMsg('로그아웃했어요');
+      $('cdel').addEventListener('click', async () => {
+        if (!table) return cloudMsg('먼저 원본 엑셀 파일을 넣어 주세요', true);
+        if (!confirm('이 파일의 클라우드 저장본을 지울까요? (이 브라우저의 저장본은 그대로예요)')) return;
+        try { await cloudDelete(); cloudMsg('🗑 이 파일의 클라우드 저장본을 지웠어요'); } catch (e) { cloudMsg('⚠️ ' + e.message, true); }
       });
-    } else {
-      out.innerHTML = '<input type="text" id="cemail" placeholder="이메일" autocomplete="username">' +
-        '<input type="password" id="cpw" placeholder="비밀번호 (6자 이상)" autocomplete="current-password">' +
-        '<button class="b3 small" id="clogin">로그인</button><button class="b2 small" id="csignup">회원가입</button>';
-      $('clogin').addEventListener('click', () => cloudAuth('login'));
-      $('csignup').addEventListener('click', () => cloudAuth('signup'));
-      $('cpw').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); cloudAuth('login'); } });
+      $('cdisc').addEventListener('click', () => {
+        if (!confirm('연결을 끊으면 이 브라우저에서 지금까지 클라우드에 저장한 작업에 다시 접근할 수 없어요. 계속할까요?')) return;
+        setSess(null); renderCloud(); cloudMsg('연결을 끊었어요. 다음에 저장하면 새 저장공간이 만들어져요');
+      });
     }
   }
   renderCloud();
