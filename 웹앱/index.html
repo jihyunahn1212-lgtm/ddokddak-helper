@@ -1,0 +1,1221 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>똑딱 정리 도우미</title>
+<style>
+  :root{
+    --bg:#FFF8F3; --card:#FFFFFF; --ink:#4A4458; --sub:#8C8499;
+    --pink:#FFD6E0; --mint:#CDF3E4; --lav:#E3DAFF; --butter:#FFF1BD; --peach:#FFE0CC;
+    --pink-d:#E8779A; --mint-d:#2E9C77; --lav-d:#7A64D1; --coral:#E8604F; --line:#F0E6EC;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:"Jua","Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif;line-height:1.5}
+  .wrap{max-width:1000px;margin:0 auto;padding:24px 16px 56px}
+  header{display:flex;align-items:center;gap:14px;margin-bottom:20px}
+  .mascot{width:64px;height:64px;border-radius:50%;background:var(--pink);display:grid;place-items:center;font-size:34px;box-shadow:0 4px 0 #F7BFD0}
+  h1{margin:0;font-size:26px}
+  .tag{color:var(--sub);font-size:14px;margin-top:2px}
+  .steps{display:flex;gap:10px;margin:18px 0;flex-wrap:wrap}
+  .step{padding:8px 16px;border-radius:999px;background:var(--card);border:2px solid var(--line);font-size:14px;color:var(--sub)}
+  .step.on{background:var(--lav);border-color:var(--lav);color:var(--lav-d)}
+  .card{background:var(--card);border-radius:24px;padding:20px;box-shadow:0 6px 0 var(--line);margin-bottom:18px}
+  .card h2{margin:0 0 12px;font-size:18px}
+  .hidden{display:none!important}
+  .drop{border:3px dashed #D9CCF5;background:#FBF9FF;border-radius:20px;padding:26px;text-align:center;color:var(--lav-d);cursor:pointer}
+  .drop.over{background:var(--lav)}
+  .drop b{font-size:18px}
+  .form{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:14px}
+  label{display:block;font-size:13px;color:var(--sub);margin-bottom:4px}
+  input[type=text],input[type=date],select{width:100%;padding:10px 14px;border-radius:14px;border:2px solid var(--line);background:#fff;font:inherit;color:var(--ink)}
+  .maptitle{margin:16px 0 0;font-size:14px;color:var(--sub)}
+  .summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:18px}
+  .stat{border-radius:22px;padding:16px 18px}
+  .stat small{display:block;color:var(--sub);font-size:13px}
+  .stat strong{font-size:24px}
+  .s-mint{background:var(--mint)} .s-peach{background:var(--peach)} .s-lav{background:var(--lav)} .s-pink{background:var(--pink)}
+  .alert{display:flex;gap:12px;align-items:center;border-radius:20px;padding:14px 18px;margin-bottom:18px}
+  .alert .face{font-size:30px}
+  .a-bad{background:#FFE9E5;border:2px solid #FFC9C0;color:#B2402F}
+  .a-ok{background:#E3F8EE;border:2px solid #BDEBD6;color:#1F7A5A}
+  .a-info{background:#F3EEFF;border:2px solid #DDD2FA;color:var(--lav-d)}
+  .checks{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:8px}
+  .chk{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:8px 12px;border-radius:14px;background:#FCFAFB;font-size:14px}
+  .badge{padding:2px 10px;border-radius:999px;font-size:12px;white-space:nowrap}
+  .ok{background:var(--mint);color:var(--mint-d)} .bad{background:#FFD9D3;color:var(--coral)} .info{background:var(--lav);color:var(--lav-d)}
+  .tablewrap{overflow-x:auto}
+  table{width:100%;border-collapse:separate;border-spacing:0 6px;font-size:14px}
+  th{font-weight:normal;color:var(--sub);text-align:left;padding:4px 10px;font-size:13px;white-space:nowrap}
+  td{padding:10px;background:#FDFBFC}
+  td:first-child{border-radius:14px 0 0 14px} td:last-child{border-radius:0 14px 14px 0}
+  td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  tr.dup td{background:var(--butter)}
+  tr.err td{background:#FFE0DB}
+  tr.tot td{background:transparent;font-size:14px;color:var(--ink);padding-top:6px;padding-bottom:6px;border-top:1px dashed var(--line);border-radius:0}
+  .summary.compact{gap:8px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+  .summary.compact .stat{padding:8px 12px;border-radius:16px}
+  .summary.compact .stat small{font-size:12px}
+  .summary.compact .stat strong{font-size:17px}
+  tr.exc td{background:#F3F1F5;color:#B5AEC0;text-decoration:line-through}
+  tr.exc td:last-child{text-decoration:none}
+  tr.add td{background:#E9FBF2}
+  .rowbtn{padding:4px 12px;font-size:12px;box-shadow:none}
+  label.must{color:#2B2736;font-weight:bold;font-size:14px}
+  #fprev,#ffinal{border-color:#A99BE8}
+  #fprev::placeholder{color:#8C84A8}
+  tr.pick{cursor:pointer}
+  tr.pick:hover td{background:var(--lav)}
+  tr.pick.sel td{background:var(--pink);font-weight:bold}
+  td.dedit{cursor:cell}
+  tr.edit td{background:#EAF3FF}
+  .pill{padding:2px 10px;border-radius:999px;background:#FFE08A;font-size:12px;color:#8A6A00;white-space:nowrap}
+  input[type=checkbox]{width:20px;height:20px;accent-color:var(--pink-d)}
+  .btns{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+  button{font:inherit;border:0;border-radius:999px;padding:12px 24px;cursor:pointer;box-shadow:0 4px 0 rgba(0,0,0,.12)}
+  button:active{transform:translateY(2px);box-shadow:0 2px 0 rgba(0,0,0,.12)}
+  button:disabled{opacity:.5;cursor:default}
+  .b1{background:var(--mint);color:var(--mint-d)} .b2{background:var(--pink);color:var(--pink-d)} .b3{background:var(--lav);color:var(--lav-d)}
+  .small{padding:8px 14px;font-size:14px}
+  .daterow{display:flex;gap:8px;align-items:center}
+  .daterow input{flex:1}
+  .finalrow{margin-top:14px;padding:16px;border-radius:20px;background:#FFF6FA;border:2px solid var(--pink)}
+  .finalrow .line{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .finalrow input{max-width:240px;font-size:18px}
+  .done{color:var(--mint-d);font-size:14px}
+  footer{text-align:center;color:var(--sub);font-size:13px;margin-top:24px}
+  .quote{display:inline-block;max-width:92%;background:var(--card);color:var(--ink);font-size:16px;padding:14px 22px;border-radius:22px;box-shadow:0 5px 0 var(--line);margin-bottom:12px}
+  .quote::before{content:"💌 "}
+  @media (max-width:600px){h1{font-size:22px}.stat strong{font-size:21px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="mascot">🐰</div>
+    <div>
+      <h1>똑딱 정리 도우미</h1>
+      <div class="tag">파일만 쏙 넣으면 날짜순으로 쪼르륵 정리해 줄게요 ✨</div>
+    </div>
+  </header>
+
+  <div class="steps">
+    <span class="step on" id="st1">① 파일 넣기</span>
+    <span class="step" id="st2">② 결과 확인</span>
+    <span class="step" id="st3">③ 내려받기</span>
+  </div>
+
+  <section class="card">
+    <h2>📂 ① 파일 넣기</h2>
+    <div class="drop" id="drop">
+      <b>여기에 엑셀 파일을 끌어다 놓거나 눌러서 고르세요</b><br>
+      파일은 내 컴퓨터 안에서만 처리되고 어디로도 전송되지 않아요 🔒
+      <input type="file" id="file" accept=".xlsx" class="hidden">
+    </div>
+    <div class="btns" style="margin-top:12px">
+      <button class="b3" id="sample">🧪 가상 샘플로 체험하기</button>
+      <span class="tag" id="fname"></span>
+    </div>
+  </section>
+
+  <div id="results" class="hidden">
+    <div id="alert" class="alert a-info"></div>
+    <div id="restorebar" class="alert a-info hidden"></div>
+    <div class="summary" id="summary"></div>
+
+    <section class="card">
+      <h2>🔍 검증 결과</h2>
+      <div class="checks" id="checks"></div>
+      <div id="mapbox" class="hidden">
+        <p class="maptitle">🧩 열 이름을 자동으로 찾지 못했어요. 맞는 열을 골라 주세요 (다 고르면 이 칸은 사라져요)</p>
+        <div class="form" id="mapform"></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>💰 자금요청 계산 <span class="tag">· 요청시재 = 목표 잔액 − (전일잔액 + 요청일 입금 − 요청일 출금)</span></h2>
+      <div class="form">
+        <div>
+          <label>요청일 (자금집행일)</label>
+          <input type="date" id="fdate">
+        </div>
+        <div><label class="must">✏️ 전일잔액 (직접 입력)</label><input type="text" id="fprev" inputmode="numeric" placeholder="예: 1,234,567"></div>
+        <div><label>목표 잔액</label><input type="text" id="ftarget" inputmode="numeric" value="5,000,000"></div>
+        <div><label>올림 단위</label><select id="funit"><option value="10000">만 원</option><option value="100000">십만 원</option><option value="1000000">백만 원</option></select></div>
+      </div>
+      <p class="maptitle">📅 날짜를 바꾸는 방법: 위 날짜칸을 직접 고르거나, 아래 표에서 날짜 줄을 눌러 보세요.</p>
+      <div class="tablewrap"><table>
+        <thead><tr><th>일자</th><th>건수</th><th style="text-align:right">입금 합계</th><th style="text-align:right">출금 합계</th></tr></thead>
+        <tbody id="daily"></tbody>
+      </table></div>
+      <div id="fundout" style="margin-top:14px"></div>
+      <div class="finalrow hidden" id="finalrow">
+        <label class="must">✏️ 최종 요청시재 (직접 고칠 수 있어요. 더 남기거나 덜 남기고 싶을 때 · 본사 역송은 마이너스 − 로 입력)</label>
+        <div class="line">
+          <button class="b3 small" id="fminus">− 한 단위</button>
+          <input type="text" id="ffinal" inputmode="numeric">
+          <button class="b3 small" id="fplus">+ 한 단위</button>
+          <button class="b2 small" id="freset">↺ 계산값으로 되돌리기</button>
+        </div>
+        <div id="finalout" style="margin-top:8px;color:#2B2736;font-size:15px"></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>📋 ② 정리 결과 <span class="tag">· 전표심사 끝난 건은 체크해 주세요</span></h2>
+      <div class="btns" style="margin-bottom:6px"><span class="tag">✏️ 일자 칸을 <b>더블클릭</b>하면 날짜를 고칠 수 있어요 (Enter 저장 · Esc 취소)</span><button class="b2 small hidden" id="undoedits">일자 수정 모두 되돌리기</button></div>
+      <div class="tag" id="editmsg" style="margin-bottom:6px"></div>
+      <div class="btns" style="margin-bottom:8px"><button class="b1 small" id="addtoggle">＋ 항목 추가</button><span class="tag">원본 파일에 없는 예정 입금·출금을 직접 넣을 수 있어요 · 중복 의심 등 필요 없는 행은 🗑 제외로 뺄 수 있어요</span></div>
+      <div class="finalrow hidden" id="addform" style="margin-top:0;margin-bottom:12px">
+        <div class="form" style="margin-top:0">
+          <div><label>일자 *</label><input type="date" id="adate"></div>
+          <div><label>구분 *</label><select id="atype"><option value="out">출금</option><option value="in">입금</option></select></div>
+          <div><label>금액 *</label><input type="text" id="aamt" inputmode="numeric" placeholder="예: 2,000,000"></div>
+          <div><label>거래처</label><input type="text" id="aname" placeholder="선택"></div>
+          <div><label>적요</label><input type="text" id="amemo" placeholder="예: 예정분"></div>
+        </div>
+        <div class="btns" style="margin-top:10px"><button class="b3 small" id="adddo">추가하기</button><button class="b2 small" id="addcancel">닫기</button><span class="tag" id="addmsg"></span></div>
+      </div>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>일자</th><th>거래처</th><th>적요</th><th>입금</th><th>출금</th><th>심사완료</th><th>메모</th><th></th></tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>🎁 ③ 내려받기</h2>
+      <div class="btns">
+        <button class="b1" id="save">💾 저장</button>
+        <button class="b3 small" id="loadwork">📁 저장 파일 불러오기</button>
+        <input type="file" id="workfile" accept=".json" class="hidden">
+        <span id="savestat" class="tag" style="font-size:15px"></span>
+      </div>
+      <div class="tag" style="margin:4px 0 12px">저장은 이 브라우저 안에만 돼요 (원본 파일 내용은 저장하지 않고, 일자 수정·제외·추가 항목·심사완료 체크·입력값만 저장해요) · Ctrl+S로도 저장돼요 · 브라우저가 저장을 막고 있으면 작업 파일(.json)로 다운로드되고, 📁로 다시 불러올 수 있어요</div>
+      <div class="btns">
+        <button class="b1" id="dl">엑셀로 내려받기</button>
+        <button class="b2" id="onlyflag">확인 필요 행만 보기</button>
+      </div>
+    </section>
+  </div>
+
+  <footer>
+    <div class="quote" id="quote"></div>
+    <div>🐰 오늘도 수고했어요 · 원본 파일은 바꾸지 않아요</div>
+  </footer>
+</div>
+
+<script>
+/* 똑딱 정리 도우미 - 핵심 로직 (외부 라이브러리 없음, 브라우저/Node 공용)
+ * 읽기: .xlsx(zip) 직접 해석 / 쓰기: 최소 .xlsx 직접 생성 / 정리·검증 계산 */
+(function (root) {
+  'use strict';
+  const dec = new TextDecoder('utf-8');
+  const enc = new TextEncoder();
+
+  /* ---------------- zip 읽기 ---------------- */
+  const CRC = (() => {
+    const t = new Uint32Array(256);
+    for (let n = 0; n < 256; n++) {
+      let c = n;
+      for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1;
+      t[n] = c >>> 0;
+    }
+    return t;
+  })();
+  function crc32(u8) {
+    let c = 0xFFFFFFFF;
+    for (let i = 0; i < u8.length; i++) c = CRC[(c ^ u8[i]) & 255] ^ (c >>> 8);
+    return (c ^ 0xFFFFFFFF) >>> 0;
+  }
+  async function inflateRaw(u8) {
+    const stream = new Blob([u8]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+    return new Uint8Array(await new Response(stream).arrayBuffer());
+  }
+  async function unzip(buf) {
+    const u8 = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
+    const dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
+    let e = -1;
+    for (let i = u8.length - 22; i >= Math.max(0, u8.length - 65557); i--) {
+      if (dv.getUint32(i, true) === 0x06054b50) { e = i; break; }
+    }
+    if (e < 0) throw new Error('엑셀(.xlsx) 파일이 아닌 것 같아요');
+    const count = dv.getUint16(e + 10, true);
+    let p = dv.getUint32(e + 16, true);
+    const files = {};
+    for (let i = 0; i < count; i++) {
+      if (dv.getUint32(p, true) !== 0x02014b50) break;
+      const method = dv.getUint16(p + 10, true);
+      const csize = dv.getUint32(p + 20, true);
+      const nlen = dv.getUint16(p + 28, true);
+      const xlen = dv.getUint16(p + 30, true);
+      const clen = dv.getUint16(p + 32, true);
+      const loff = dv.getUint32(p + 42, true);
+      const name = dec.decode(u8.subarray(p + 46, p + 46 + nlen));
+      const ln = dv.getUint16(loff + 26, true);
+      const lx = dv.getUint16(loff + 28, true);
+      const start = loff + 30 + ln + lx;
+      files[name] = { method, data: u8.subarray(start, start + csize) };
+      p += 46 + nlen + xlen + clen;
+    }
+    return files;
+  }
+  async function readText(files, name) {
+    const f = files[name];
+    if (!f) return null;
+    if (f.method === 0) return dec.decode(f.data);
+    if (f.method === 8) return dec.decode(await inflateRaw(f.data));
+    throw new Error('지원하지 않는 압축 방식이에요');
+  }
+
+  /* ---------------- xlsx 읽기 ---------------- */
+  function unesc(s) {
+    return s
+      .replace(/&#x([0-9a-fA-F]+);/g, (_, h) => String.fromCodePoint(parseInt(h, 16)))
+      .replace(/&#(\d+);/g, (_, d) => String.fromCodePoint(parseInt(d, 10)))
+      .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'")
+      .replace(/&amp;/g, '&');
+  }
+  function attrs(str) {
+    const o = {};
+    const re = /([\w:.-]+)\s*=\s*"([^"]*)"/g;
+    let m;
+    while ((m = re.exec(str))) o[m[1]] = unesc(m[2]);
+    return o;
+  }
+  function textOf(xml) {
+    xml = xml.replace(/<rPh\b[\s\S]*?<\/rPh>/g, '');
+    let out = '';
+    const re = /<t\b[^>]*>([\s\S]*?)<\/t>/g;
+    let m;
+    while ((m = re.exec(xml))) out += unesc(m[1]);
+    return out;
+  }
+  function colIndex(ref) {
+    const m = /^([A-Z]+)/.exec(ref);
+    let n = 0;
+    for (const ch of m[1]) n = n * 26 + (ch.charCodeAt(0) - 64);
+    return n - 1;
+  }
+  const BUILTIN_DATE = new Set([14, 15, 16, 17, 18, 19, 20, 21, 22, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 45, 46, 47, 50, 51, 52, 53, 54, 55, 56, 57, 58]);
+  function isDateFmt(code) {
+    const c = code.replace(/"[^"]*"/g, '').replace(/\[[^\]]*\]/g, '').replace(/\\./g, '');
+    return /[ymdhs]/i.test(c);
+  }
+  function serialToISO(n) {
+    const d = new Date(Math.round((n - 25569) * 86400000));
+    return d.toISOString().slice(0, 10);
+  }
+
+  async function parseXlsx(buf) {
+    const files = await unzip(buf);
+    const wbx = await readText(files, 'xl/workbook.xml');
+    if (!wbx) throw new Error('엑셀(.xlsx) 파일이 아닌 것 같아요');
+    const sm = /<sheet\b([^>]*?)\/?>/.exec(wbx);
+    if (!sm) throw new Error('시트를 찾을 수 없어요');
+    const sa = attrs(sm[1]);
+    let target = 'worksheets/sheet1.xml';
+    const rels = await readText(files, 'xl/_rels/workbook.xml.rels');
+    if (rels && sa['r:id']) {
+      const re = /<Relationship\b([^>]*?)\/?>/g;
+      let m;
+      while ((m = re.exec(rels))) {
+        const a = attrs(m[1]);
+        if (a.Id === sa['r:id']) { target = a.Target; break; }
+      }
+    }
+    const path = target.startsWith('/') ? target.slice(1) : 'xl/' + target;
+    const sheetXml = await readText(files, path);
+    if (!sheetXml) throw new Error('시트 내용을 읽을 수 없어요');
+
+    const shared = [];
+    const ssx = await readText(files, 'xl/sharedStrings.xml');
+    if (ssx) {
+      const re = /<si\b[^>]*>([\s\S]*?)<\/si>|<si\b[^>]*\/>/g;
+      let m;
+      while ((m = re.exec(ssx))) shared.push(m[1] ? textOf(m[1]) : '');
+    }
+
+    const dateXf = [];
+    const stx = await readText(files, 'xl/styles.xml');
+    if (stx) {
+      const custom = {};
+      const re = /<numFmt\b([^>]*?)\/?>/g;
+      let m;
+      while ((m = re.exec(stx))) {
+        const a = attrs(m[1]);
+        custom[a.numFmtId] = a.formatCode || '';
+      }
+      const cx = /<cellXfs\b[^>]*>([\s\S]*?)<\/cellXfs>/.exec(stx);
+      if (cx) {
+        const re2 = /<xf\b([^>]*?)\/?>/g;
+        let m2;
+        while ((m2 = re2.exec(cx[1]))) {
+          const id = parseInt(attrs(m2[1]).numFmtId || '0', 10);
+          dateXf.push(BUILTIN_DATE.has(id) || (custom[id] !== undefined && isDateFmt(custom[id])));
+        }
+      }
+    }
+
+    const grid = [];
+    const rowRe = /<row\b([^>]*?)(?:\/>|>([\s\S]*?)<\/row>)/g;
+    let rm;
+    let autoRow = 0;
+    while ((rm = rowRe.exec(sheetXml))) {
+      const ra = attrs(rm[1]);
+      const rIdx = ra.r ? parseInt(ra.r, 10) - 1 : autoRow;
+      autoRow = rIdx + 1;
+      const cells = [];
+      const body = rm[2] || '';
+      const cRe = /<c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g;
+      let cm;
+      let autoCol = 0;
+      while ((cm = cRe.exec(body))) {
+        const ca = attrs(cm[1]);
+        const ci = ca.r ? colIndex(ca.r) : autoCol;
+        autoCol = ci + 1;
+        const inner = cm[2] || '';
+        const vm = /<v>([\s\S]*?)<\/v>/.exec(inner);
+        let val = null;
+        const t = ca.t || 'n';
+        if (t === 's' && vm) val = shared[parseInt(vm[1], 10)];
+        else if (t === 'inlineStr') val = textOf(inner);
+        else if (t === 'str' && vm) val = unesc(vm[1]);
+        else if (t === 'b' && vm) val = vm[1] === '1' ? 'TRUE' : 'FALSE';
+        else if (t === 'e') val = null;
+        else if (vm && vm[1] !== '') {
+          const num = parseFloat(vm[1]);
+          const s = ca.s !== undefined ? parseInt(ca.s, 10) : 0;
+          val = dateXf[s] ? serialToISO(num) : num;
+        }
+        cells[ci] = val;
+      }
+      grid[rIdx] = cells;
+    }
+    const rows = [];
+    for (const r of grid) {
+      if (!r) continue;
+      const dense = Array.from(r, (v) => (v === undefined ? null : v));
+      if (dense.some((v) => v !== null && String(v).trim() !== '')) rows.push(dense);
+    }
+    if (!rows.length) throw new Error('데이터가 비어 있어요');
+    const headers = rows[0].map((h) => (h === null ? '' : String(h).trim()));
+    return { sheetName: sa.name || '', headers, rows: rows.slice(1) };
+  }
+
+  /* ---------------- 값 변환 ---------------- */
+  function normAmount(v) {
+    if (v === null || v === undefined) return 0;
+    if (typeof v === 'number') return v;
+    const s = String(v).replace(/[,\s원]/g, '');
+    if (s === '') return 0;
+    return /^-?\d+(\.\d+)?$/.test(s) ? Number(s) : NaN;
+  }
+  function validISO(y, m, d) {
+    const dt = new Date(Date.UTC(y, m - 1, d));
+    return dt.getUTCFullYear() === y && dt.getUTCMonth() === m - 1 && dt.getUTCDate() === d
+      ? `${String(y).padStart(4, '0')}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}` : null;
+  }
+  function normDate(v) {
+    if (v === null || v === undefined || String(v).trim() === '') return null;
+    if (typeof v === 'number') {
+      if (v >= 19000101 && v <= 29991231) return validISO(Math.floor(v / 10000), Math.floor(v / 100) % 100, v % 100);
+      if (v > 20000 && v < 80000) return serialToISO(v);
+      return null;
+    }
+    const s = String(v).trim();
+    let m = /^(\d{4})[-./](\d{1,2})[-./](\d{1,2})/.exec(s);
+    if (m) return validISO(+m[1], +m[2], +m[3]);
+    m = /^(\d{4})(\d{2})(\d{2})$/.exec(s);
+    if (m) return validISO(+m[1], +m[2], +m[3]);
+    return null;
+  }
+
+  /* ---------------- 정리·검증 ---------------- */
+  const REQUIRED = ['일자', '전표번호', '입금', '출금'];
+  const OPTIONAL = ['거래처', '적요'];
+
+  function autoMap(headers) {
+    const norm = (s) => String(s).replace(/\s+/g, '');
+    const map = {};
+    for (const f of REQUIRED.concat(OPTIONAL)) {
+      const i = headers.findIndex((h) => norm(h) === f);
+      map[f] = i >= 0 ? i : -1;
+    }
+    return map;
+  }
+
+  /* opts: { dateOverrides: {원본행번호: 'YYYY-MM-DD'}, excluded: {id: true}, extraRows: [{uid, 일자, 거래처, 적요, 입금, 출금}] }
+   * - 제외(excluded)한 행은 표에는 남기되 합계·일자별 합계·자금요청·중복 판정에서 뺀다
+   * - extraRows(직접 추가한 행)는 원본 행과 똑같이 합계에 들어간다 */
+  function processTable(table, map, opts) {
+    opts = opts || {};
+    const over = opts.dateOverrides || {};
+    const exc = opts.excluded || {};
+    const miss = REQUIRED.filter((f) => map[f] === undefined || map[f] < 0);
+    if (miss.length) throw new Error('필수 열을 골라 주세요: ' + miss.join(', '));
+    const get = (row, f) => (map[f] >= 0 ? row[map[f]] : null);
+    const items = [];
+    table.rows.forEach((row, idx) => {
+      const errors = [];
+      const orig = normDate(get(row, '일자'));
+      const ov = over[idx + 2];
+      const date = ov || orig;
+      const edited = !!ov && ov !== orig;
+      if (!date) errors.push('일자 변환 오류');
+      let inc = normAmount(get(row, '입금'));
+      let out = normAmount(get(row, '출금'));
+      if (Number.isNaN(inc) || Number.isNaN(out)) errors.push('금액 변환 오류');
+      if (Number.isNaN(inc)) inc = 0;
+      if (Number.isNaN(out)) out = 0;
+      const txt = (f) => { const v = get(row, f); return v === null || v === undefined ? '' : String(v); };
+      items.push({ srcRow: idx + 2, 일자: date, 전표번호: txt('전표번호'), 거래처: txt('거래처'), 적요: txt('적요'), 입금: inc, 출금: out, errors, dup: false, edited, origDate: orig, added: false });
+    });
+    const occ = {};
+    items.forEach((r) => { // 체크·제외 저장용 id는 원본 순서 기준(날짜를 고쳐도 바뀌지 않음)
+      occ[r.전표번호] = (occ[r.전표번호] || 0) + 1;
+      r.id = r.전표번호 + (occ[r.전표번호] > 1 ? '#' + occ[r.전표번호] : '');
+    });
+    const sourceItems = items.slice();
+    (opts.extraRows || []).forEach((x) => {
+      const srcRow = 1000000 + x.uid;
+      const orig = normDate(x.일자);
+      const ov = over[srcRow];
+      const date = ov || orig;
+      items.push({
+        srcRow, id: 'ADD' + x.uid, 일자: date, 전표번호: '', 거래처: x.거래처 || '', 적요: x.적요 || '',
+        입금: x.입금 || 0, 출금: x.출금 || 0, errors: date ? [] : ['일자 변환 오류'], dup: false,
+        edited: !!ov && ov !== orig, origDate: orig, added: true,
+      });
+    });
+    items.forEach((r) => { r.excluded = !r.added && !!exc[r.id]; });
+
+    const good = items.filter((r) => r.일자).sort((a, b) => (a.일자 < b.일자 ? -1 : a.일자 > b.일자 ? 1 : a.srcRow - b.srcRow));
+    const bad = items.filter((r) => !r.일자);
+    const sorted = good.concat(bad);
+    const seen = new Set();
+    sorted.forEach((r) => {
+      if (!r.excluded) {
+        const key = [r.전표번호, r.일자, r.입금, r.출금].join('|');
+        if (seen.has(key)) { r.dup = true; r.errors.push('중복 의심'); }
+        seen.add(key);
+      }
+      const notes = r.errors.slice();
+      if (r.edited) notes.push('일자 수정됨(원래 ' + (r.origDate || '오류') + ')');
+      if (r.added) notes.push('직접 추가');
+      if (r.excluded) notes.push('제외됨');
+      r.memo = notes.join(', ');
+    });
+    const active = sorted.filter((r) => !r.excluded);
+
+    const sumRaw = (f) => table.rows.reduce((s, r) => { const v = normAmount(get(r, f)); return s + (Number.isNaN(v) ? 0 : v); }, 0);
+    const sumSrc = (f) => sourceItems.reduce((s, r) => s + r[f], 0);
+    const mk = (name, expected, actual) => {
+      const diff = actual - expected;
+      return { name, expected, actual, diff, status: Math.abs(diff) < 0.005 ? '통과' : '불일치' };
+    };
+    // 행 수·합계 검증은 "원본 파일을 빠짐없이 읽었는지" 확인한다(제외한 행도 포함해서 비교)
+    const checks = [
+      mk('행 수 일치(원본 vs 정리)', table.rows.length, sourceItems.length),
+      mk('입금 합계 일치', sumRaw('입금'), sumSrc('입금')),
+      mk('출금 합계 일치', sumRaw('출금'), sumSrc('출금')),
+      mk('변환 오류 행 수', 0, active.filter((r) => r.errors.some((e) => e.includes('변환'))).length),
+    ];
+
+    const dm = new Map();
+    active.forEach((r) => {
+      if (!r.일자) return;
+      const d = dm.get(r.일자) || { date: r.일자, count: 0, inc: 0, out: 0, flagged: 0 };
+      d.count += 1; d.inc += r.입금; d.out += r.출금; if (r.errors.length) d.flagged += 1;
+      dm.set(r.일자, d);
+    });
+    return {
+      rows: sorted, checks,
+      dupCount: active.filter((r) => r.dup).length,
+      daily: [...dm.values()],
+      totals: { inc: active.reduce((s, r) => s + r.입금, 0), out: active.reduce((s, r) => s + r.출금, 0), count: active.length },
+      excludedCount: sorted.length - active.length,
+      addedCount: sorted.filter((r) => r.added).length,
+    };
+  }
+
+  /* ---------------- xlsx 쓰기 ---------------- */
+  const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  function colName(i) {
+    let s = '';
+    for (i += 1; i > 0; i = Math.floor((i - 1) / 26)) s = String.fromCharCode(65 + ((i - 1) % 26)) + s;
+    return s;
+  }
+  function isoToSerial(iso) {
+    const [y, m, d] = iso.split('-').map(Number);
+    return Date.UTC(y, m - 1, d) / 86400000 + 25569;
+  }
+  // 셀: {t:'s'|'n'|'d', v, s:스타일번호}  스타일: 0기본 1날짜 2숫자 3헤더 4노랑글자 5노랑날짜 6노랑숫자 7굵게 8굵은숫자
+  function sheetXml(grid, widths) {
+    let rowsXml = '';
+    grid.forEach((row, r) => {
+      if (!row) return;
+      let cs = '';
+      row.forEach((c, ci) => {
+        if (c === undefined || c === null) return;
+        const ref = colName(ci) + (r + 1);
+        const s = c.s ? ` s="${c.s}"` : '';
+        if (c.t === 'n') cs += `<c r="${ref}"${s}><v>${c.v}</v></c>`;
+        else if (c.t === 'd') cs += `<c r="${ref}"${s}><v>${isoToSerial(c.v)}</v></c>`;
+        else cs += `<c r="${ref}"${s} t="inlineStr"><is><t xml:space="preserve">${esc(c.v)}</t></is></c>`;
+      });
+      rowsXml += `<row r="${r + 1}">${cs}</row>`;
+    });
+    const cols = widths.map((w, i) => `<col min="${i + 1}" max="${i + 1}" width="${w}" customWidth="1"/>`).join('');
+    return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols>${cols}</cols><sheetData>${rowsXml}</sheetData></worksheet>`;
+  }
+  const STYLES = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="1"><numFmt numFmtId="164" formatCode="yyyy\\-mm\\-dd"/></numFmts><fonts count="2"><font><sz val="11"/><name val="Malgun Gothic"/></font><font><b/><sz val="11"/><name val="Malgun Gothic"/></font></fonts><fills count="4"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFDDEBF7"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFFFF2CC"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="9"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="3" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/><xf numFmtId="0" fontId="0" fillId="3" borderId="0" xfId="0" applyFill="1"/><xf numFmtId="164" fontId="0" fillId="3" borderId="0" xfId="0" applyNumberFormat="1" applyFill="1"/><xf numFmtId="3" fontId="0" fillId="3" borderId="0" xfId="0" applyNumberFormat="1" applyFill="1"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/><xf numFmtId="3" fontId="1" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`;
+
+  function zipStore(entries) {
+    const parts = [];
+    const central = [];
+    let offset = 0;
+    const u16 = (n) => new Uint8Array([n & 255, (n >> 8) & 255]);
+    const u32 = (n) => new Uint8Array([n & 255, (n >>> 8) & 255, (n >>> 16) & 255, (n >>> 24) & 255]);
+    const cat = (...a) => { const len = a.reduce((s, x) => s + x.length, 0); const o = new Uint8Array(len); let p = 0; for (const x of a) { o.set(x, p); p += x.length; } return o; };
+    for (const [name, text] of entries) {
+      const nameB = enc.encode(name);
+      const data = enc.encode(text);
+      const crc = crc32(data);
+      const local = cat(u32(0x04034b50), u16(20), u16(0x0800), u16(0), u16(0), u16(0x21), u32(crc), u32(data.length), u32(data.length), u16(nameB.length), u16(0), nameB, data);
+      central.push(cat(u32(0x02014b50), u16(20), u16(20), u16(0x0800), u16(0), u16(0), u16(0x21), u32(crc), u32(data.length), u32(data.length), u16(nameB.length), u16(0), u16(0), u16(0), u16(0), u32(0), u32(offset), nameB));
+      parts.push(local);
+      offset += local.length;
+    }
+    const cd = cat(...central);
+    const end = cat(u32(0x06054b50), u16(0), u16(0), u16(entries.length), u16(entries.length), u32(cd.length), u32(offset), u16(0));
+    return cat(...parts, cd, end);
+  }
+
+  function buildXlsx(result, checked, fund) {
+    const grid = [];
+    const set = (r, c, cell) => { (grid[r] = grid[r] || [])[c] = cell; };
+    const S = (v, s) => ({ t: 's', v, s });
+    ['일자', '전표번호', '거래처', '적요', '입금', '출금', '전표심사완료', '확인메모'].forEach((h, i) => set(0, i, S(h, 3)));
+    const shown = result.rows.filter((x) => !x.excluded);
+    shown.forEach((r, i) => {
+      const y = r.dup ? 4 : 0;
+      const row = i + 1;
+      if (r.일자) set(row, 0, { t: 'd', v: r.일자, s: r.dup ? 5 : 1 }); else set(row, 0, S('(변환 오류)', y));
+      set(row, 1, S(r.전표번호, y));
+      set(row, 2, S(r.거래처, y));
+      set(row, 3, S(r.적요, y));
+      set(row, 4, { t: 'n', v: r.입금, s: r.dup ? 6 : 2 });
+      set(row, 5, { t: 'n', v: r.출금, s: r.dup ? 6 : 2 });
+      set(row, 6, S(checked[r.id] ? 'O' : 'X', y));
+      set(row, 7, S(r.memo, y));
+    });
+
+    // 오른쪽(K열~): 검증 → 일자별 합계 → 자금요청 계산
+    let r = 0;
+    ['검증 항목', '기준값', '결과값', '차이', '판정'].forEach((h, i) => set(r, 10 + i, S(h, 3)));
+    result.checks.forEach((c) => {
+      r += 1;
+      set(r, 10, S(c.name, 0));
+      set(r, 11, { t: 'n', v: c.expected, s: 2 });
+      set(r, 12, { t: 'n', v: c.actual, s: 2 });
+      set(r, 13, { t: 'n', v: c.diff, s: 2 });
+      set(r, 14, S(c.status, 7));
+    });
+    r += 1; set(r, 10, S('중복 의심 행 수(노란색)', 0)); set(r, 12, { t: 'n', v: result.dupCount, s: 2 });
+
+    r += 2;
+    ['일자별 합계', '건수', '입금 합계', '출금 합계'].forEach((h, i) => set(r, 10 + i, S(h, 3)));
+    result.daily.forEach((d) => {
+      r += 1;
+      set(r, 10, { t: 'd', v: d.date, s: 1 });
+      set(r, 11, { t: 'n', v: d.count, s: 2 });
+      set(r, 12, { t: 'n', v: d.inc, s: 2 });
+      set(r, 13, { t: 'n', v: d.out, s: 2 });
+    });
+    if (result.daily.length) {
+      r += 1;
+      set(r, 10, S('합계', 7));
+      set(r, 11, { t: 'n', v: result.daily.reduce((s, d) => s + d.count, 0), s: 8 });
+      set(r, 12, { t: 'n', v: result.daily.reduce((s, d) => s + d.inc, 0), s: 8 });
+      set(r, 13, { t: 'n', v: result.daily.reduce((s, d) => s + d.out, 0), s: 8 });
+    }
+
+    const excl = result.rows.filter((x) => x.excluded);
+    if (excl.length) {
+      r += 2;
+      ['제외한 행(합계에서 뺌)', '일자', '거래처', '입금', '출금'].forEach((h, i) => set(r, 10 + i, S(h, 3)));
+      excl.forEach((x) => {
+        r += 1;
+        set(r, 10, S(x.전표번호, 0));
+        if (x.일자) set(r, 11, { t: 'd', v: x.일자, s: 1 }); else set(r, 11, S('(변환 오류)', 0));
+        set(r, 12, S(x.거래처, 0));
+        set(r, 13, { t: 'n', v: x.입금, s: 2 });
+        set(r, 14, { t: 'n', v: x.출금, s: 2 });
+      });
+    }
+
+    if (fund) {
+      r += 2;
+      set(r, 10, S('자금요청 계산', 3)); set(r, 11, S('', 3)); set(r, 12, S('', 3));
+      const line = (label, cell) => { r += 1; set(r, 10, S(label, 0)); set(r, 12, cell); };
+      const N = (v, s) => ({ t: 'n', v, s: s || 2 });
+      line('요청일', S(fund.date, 0));
+      line('전일잔액(입력)', N(fund.prevBal));
+      line('요청일 입금 합계', N(fund.inc));
+      line('요청일 출금 합계', N(fund.out));
+      line('목표 잔액', N(fund.target));
+      line('요청시재(계산값)', N(fund.exact > 0 ? fund.exact : 0, 8));
+      line('올림 단위', N(fund.unit));
+      line('요청시재(올림값)', N(fund.rounded, 8));
+      line('최종 요청시재(수정 반영)', N(fund.final, 8));
+      line('최종 요청 시 예상 잔액', N(fund.afterFinal));
+      line('목표 잔액 대비 차이', N(fund.diffTarget));
+    }
+
+    const entries = [
+      ['[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>'],
+      ['_rels/.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'],
+      ['xl/workbook.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="정리결과" sheetId="1" r:id="rId1"/></sheets></workbook>'],
+      ['xl/_rels/workbook.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>'],
+      ['xl/styles.xml', STYLES],
+      ['xl/worksheets/sheet1.xml', sheetXml(grid, [12, 10, 14, 14, 15, 15, 13, 20, 3, 3, 30, 16, 16, 16, 18])],
+    ];
+    return zipStore(entries);
+  }
+
+  /* 자금요청: 요청시재 = 목표잔액 - (전일잔액 + 요청일 입금 - 요청일 출금)
+   * final(최종 요청시재)은 사용자가 수정한 값. 없으면 올림값을 사용 */
+  function fundRequest(rows, o) {
+    const day = rows.filter((r) => r.일자 === o.date && !r.excluded);
+    const inc = day.reduce((s, r) => s + r.입금, 0);
+    const out = day.reduce((s, r) => s + r.출금, 0);
+    const base = o.prevBal + inc - out;
+    const exact = o.target - base;
+    const rounded = exact > 0 ? Math.ceil(exact / o.unit) * o.unit : 0;
+    const final = o.final !== undefined && o.final !== null ? o.final : rounded;
+    return {
+      date: o.date, prevBal: o.prevBal, target: o.target, unit: o.unit,
+      count: day.length, flagged: day.filter((r) => r.errors.length).length,
+      inc, out, base, exact, rounded, final,
+      afterFinal: base + final, diffTarget: base + final - o.target,
+    };
+  }
+
+  /* 매일 바뀌는 응원 한마디: 날짜(로컬)로 문구를 정해서 하루 동안은 같고 다음 날 바뀐다 */
+  const QUOTES = [
+    "숫자는 거짓말을 하지 않아요. 오늘도 차분히, 정확하게!",
+    "작은 확인 하나가 큰 실수를 막아 줘요.",
+    "천천히 가도 괜찮아요. 맞게 가는 게 제일 빨라요.",
+    "오늘 맞춘 한 줄이 내일의 여유가 돼요.",
+    "완벽하지 않아도 괜찮아요. 확인하고 고치면 돼요.",
+    "꾸준함은 가장 조용하고 가장 강한 실력이에요.",
+    "어려운 날에도 장부는 결국 맞춰져요. 당신 덕분에요.",
+    "한 번에 하나씩 하면, 어느새 다 끝나 있어요.",
+    "당신이 꼼꼼히 본 만큼 회사는 든든해져요.",
+    "오늘의 수고가 쌓여서 신뢰가 돼요.",
+    "차이가 나는 날은, 원인을 찾는 실력이 자라는 날이에요.",
+    "급할수록 한 번 더 확인! 그게 프로의 습관이에요.",
+    "잘 쉬는 것도 일의 일부예요. 물 한 잔 어때요?",
+    "오늘도 돈의 길을 바르게 안내하는 당신, 멋져요.",
+    "실수를 발견했다면, 이미 한 걸음 앞서 있는 거예요.",
+    "지금 하는 정리가 미래의 나를 도와줘요.",
+    "마감은 지나가고, 쌓은 실력은 남아요.",
+    "오늘 하루도 끝까지 맞춘 당신에게 박수를!",
+    "어제보다 한 가지 더 편해졌다면 충분히 성장한 거예요.",
+    "정확함은 최고의 친절이에요.",
+    "막히면 잠깐 멈추고 숨 고르기. 답은 곧 보여요.",
+    "당신의 꼼꼼함은 팀의 안전망이에요.",
+    "오늘 할 일을 하나 끝냈다면, 이미 잘하고 있는 거예요.",
+    "복잡한 일도 순서대로 풀면 단순해져요.",
+    "자랑스러워해도 돼요. 아무도 모르게 많은 걸 지켜내고 있어요.",
+    "시작이 반이에요. 이미 파일을 열었잖아요!",
+    "틀려도 괜찮아요. 확인하는 사람이 있다는 게 중요해요.",
+    "오늘의 한 걸음이 내일의 지름길이 돼요.",
+    "맑은 머리로 맞추는 숫자가 가장 정확해요.",
+    "힘든 날일수록 작은 칭찬을 스스로에게 해 주세요.",
+    "당신이 있어서 오늘도 정산이 무사히 끝나요.",
+    "성실함은 결국 가장 빛나는 재능이에요.",
+    "한 줄 한 줄 쌓다 보면 큰 그림이 완성돼요.",
+    "오늘의 나, 어제의 나보다 조금 더 단단해졌어요.",
+    "서두르지 않아도 돼요. 당신의 속도가 정답이에요.",
+    "맞춰 놓고 나면 마음이 가벼워져요. 조금만 더 힘내요!",
+    "당신의 정리 덕분에 누군가는 오늘 편하게 일해요.",
+    "마지막까지 확인하는 당신, 정말 든든해요.",
+    "오늘도 수고 많았어요. 내일은 더 가벼울 거예요.",
+  ];
+  function dailyQuote(d) {
+    const day = Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000);
+    return QUOTES[((day % QUOTES.length) + QUOTES.length) % QUOTES.length];
+  }
+
+  const api = { dailyQuote, QUOTES, fundRequest, parseXlsx, autoMap, processTable, buildXlsx, normAmount, normDate, REQUIRED, OPTIONAL };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  else root.DD = api;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const fmt = (n) => (n === null || n === undefined || Number.isNaN(n)) ? '' : Number(n).toLocaleString('ko-KR');
+  const sfmt = (n) => (n > 0 ? '+' : '') + fmt(n);
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem('ddokddak.' + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem('ddokddak.' + k, JSON.stringify(v)); return true; } catch (e) { return false; } },
+  };
+  const DOW = ['일', '월', '화', '수', '목', '금', '토'];
+  $('quote').textContent = DD.dailyQuote(new Date());
+  let table = null, map = null, result = null, onlyFlag = false, lastFund = null, finalEdited = false, dateEdits = {}, excluded = {}, extraRows = [], nextUid = 1;
+  let dirty = false, savedAt = '', fp = '';
+  let checked = {};
+
+  function numInput(id) {
+    const s = $(id).value.trim();
+    if (s === '') return null;
+    const v = DD.normAmount(s);
+    return Number.isNaN(v) ? NaN : v;
+  }
+  const okNum = (v) => v !== null && !Number.isNaN(v);
+  function setStep(n) { [1, 2, 3].forEach((i) => $('st' + i).classList.toggle('on', i === n)); }
+  function dow(iso) { return DOW[new Date(iso + 'T00:00:00Z').getUTCDay()]; }
+
+  async function loadBuffer(buf, name) {
+    try {
+      table = await DD.parseXlsx(buf);
+      map = DD.autoMap(table.headers);
+      $('fdate').value = ''; finalEdited = false; resetEdits();
+      $('fname').textContent = name + ' (' + table.rows.length + '행)';
+      renderMap();
+      recompute();
+      afterLoad(name);
+    } catch (e) {
+      table = null; result = null;
+      $('results').classList.add('hidden');
+      $('fname').textContent = '';
+      showMsg('a-bad', '😵', e.message || '파일을 읽지 못했어요');
+    }
+  }
+  function showMsg(cls, face, html) {
+    $('results').classList.remove('hidden');
+    $('alert').className = 'alert ' + cls;
+    $('alert').innerHTML = '<span class="face">' + face + '</span><div>' + html + '</div>';
+    if (!table) { $('summary').innerHTML = ''; $('checks').innerHTML = ''; $('tbody').innerHTML = ''; $('mapbox').classList.add('hidden'); }
+  }
+
+  function renderMap() {
+    // 열 이름을 자동으로 못 찾은 경우에만 열 선택을 보여 준다
+    if (!DD.REQUIRED.some((f) => map[f] < 0)) { $('mapbox').classList.add('hidden'); return; }
+    $('mapbox').classList.remove('hidden');
+    const opts = (sel, optional) => '<option value="-1"' + (sel < 0 ? ' selected' : '') + '>' + (optional ? '(없음)' : '선택해 주세요') + '</option>' +
+      table.headers.map((h, i) => '<option value="' + i + '"' + (i === sel ? ' selected' : '') + '>' + esc(h || '(빈 열 ' + (i + 1) + ')') + '</option>').join('');
+    const all = DD.REQUIRED.map((f) => [f, false]).concat(DD.OPTIONAL.map((f) => [f, true]));
+    $('mapform').innerHTML = all.map(([f, o]) => '<div><label>' + f + (o ? ' (선택)' : ' *') + '</label><select data-f="' + f + '">' + opts(map[f], o) + '</select></div>').join('');
+    $('mapform').querySelectorAll('select').forEach((s) => s.addEventListener('change', () => { map[s.dataset.f] = parseInt(s.value, 10); finalEdited = false; recompute(); }));
+  }
+
+  function recompute() {
+    if (!table) return;
+    touch();
+    try {
+      result = DD.processTable(table, map, { dateOverrides: dateEdits, excluded, extraRows });
+    } catch (e) {
+      result = null;
+      showMsg('a-info', '🧩', e.message + ' (검증 결과 카드에 나온 열 선택에서 골라 주세요)');
+      $('mapbox').classList.remove('hidden');
+      $('checks').innerHTML = '';
+      $('summary').innerHTML = '';
+      $('tbody').innerHTML = '';
+      $('daily').innerHTML = '';
+      $('fundout').innerHTML = '';
+      $('finalrow').classList.add('hidden');
+      return;
+    }
+    render();
+  }
+
+  function render() {
+    $('results').classList.remove('hidden');
+    setStep(2);
+    if (!DD.REQUIRED.some((f) => map[f] < 0)) $('mapbox').classList.add('hidden');
+    const r = result;
+    const bad = r.checks.filter((c) => c.status !== '통과');
+    if (bad.length) {
+      const hint = r.dupCount ? '<br>노란색 행(중복 의심)부터 확인해 볼까요? 필요 없는 행은 🗑 제외로 뺄 수 있어요.' : '<br>아래 검증 결과를 확인해 주세요.';
+      showMsg('a-bad', '🥺', '<b>확인이 필요한 검증이 있어요: ' + bad.map((c) => esc(c.name)).join(', ') + '</b>' + hint);
+    } else if (r.dupCount) {
+      showMsg('a-bad', '👀', '<b>검증은 통과했지만 중복 의심 행이 ' + r.dupCount + '개 있어요.</b><br>노란색 행을 확인하고, 필요 없는 행은 🗑 제외로 빼 주세요.');
+    } else {
+      showMsg('a-ok', '🎉', '<b>다 맞아요!</b> 눈으로 한 번 더 확인하고 승인해 주세요.');
+    }
+    $('summary').innerHTML =
+      '<div class="stat s-mint"><small>정리된 행 수' + (r.excludedCount || r.addedCount ? ' (제외 ' + r.excludedCount + ' · 직접 추가 ' + r.addedCount + ')' : '') + '</small><strong>' + r.totals.count + '개</strong></div>' +
+      '<div class="stat s-lav"><small>입금 합계(전체)</small><strong>' + fmt(r.totals.inc) + '원</strong></div>' +
+      '<div class="stat s-peach"><small>출금 합계(전체)</small><strong>' + fmt(r.totals.out) + '원</strong></div>';
+    $('checks').innerHTML = r.checks.map((c) => {
+      const cls = c.status === '통과' ? 'ok' : 'bad';
+      return '<div class="chk">' + esc(c.name) + ' <span class="badge ' + cls + '">' + (c.status === '통과' ? '통과 ✓' : c.status) + '</span></div>';
+    }).join('');
+    renderRows();
+    if (!$('fdate').value) {
+      const ds = r.daily.map((d) => d.date);
+      if (ds.length) $('fdate').value = ds[ds.length - 1];
+    }
+    renderFund();
+  }
+
+  function renderRows() {
+    const rows = result.rows.filter((r) => !onlyFlag || (!r.excluded && (r.errors.length || r.edited)));
+    $('onlyflag').textContent = onlyFlag ? '전체 행 보기' : '확인 필요 행만 보기';
+    $('tbody').innerHTML = rows.map((r) => {
+      const cls = r.excluded ? 'exc' : r.errors.some((e) => e.includes('변환')) ? 'err' : r.dup ? 'dup' : r.edited ? 'edit' : r.added ? 'add' : '';
+      const act = r.added ? ['del', '🗑 삭제', 'b2'] : r.excluded ? ['restore', '↩ 복원', 'b3'] : ['exclude', '🗑 제외', 'b2'];
+      const btn = '<button class="' + act[2] + ' rowbtn" data-act="' + act[0] + '" data-id="' + esc(r.id) + '">' + act[1] + '</button>';
+      const dateTd = r.excluded
+        ? '<td>' + (r.일자 ? esc(r.일자) : '(오류)') + '</td>'
+        : '<td class="dedit" data-src="' + r.srcRow + '" title="더블클릭해서 날짜를 고쳐요">' + (r.일자 ? esc(r.일자) : '(오류)') + (r.edited ? ' ✏️' : '') + '</td>';
+      return '<tr class="' + cls + '">' + dateTd + '<td>' + esc(r.거래처) + '</td><td>' + esc(r.적요) +
+        '</td><td class="n">' + (r.입금 ? fmt(r.입금) : '') + '</td><td class="n">' + (r.출금 ? fmt(r.출금) : '') +
+        '</td><td><input type="checkbox" data-id="' + esc(r.id) + '"' + (checked[r.id] ? ' checked' : '') + (r.excluded ? ' disabled' : '') + '></td>' +
+        '<td>' + (r.memo ? '<span class="pill">' + esc(r.memo) + (r.dup ? ' 👀' : '') + '</span>' : '') + '</td><td>' + btn + '</td></tr>';
+    }).join('') || '<tr><td colspan="8" style="text-align:center">확인할 행이 없어요 🎉</td></tr>';
+    $('tbody').querySelectorAll('input[type=checkbox]').forEach((cb) => cb.addEventListener('change', () => {
+      if (cb.checked) checked[cb.dataset.id] = true; else delete checked[cb.dataset.id];
+      touch();
+    }));
+    $('tbody').querySelectorAll('td.dedit').forEach((td) => td.addEventListener('dblclick', () => startEdit(td)));
+    $('tbody').querySelectorAll('button.rowbtn').forEach((b) => b.addEventListener('click', () => rowAction(b.dataset.act, b.dataset.id)));
+    $('undoedits').classList.toggle('hidden', !Object.keys(dateEdits).length);
+  }
+
+  // 행 제외 / 복원 / 직접 추가한 행 삭제
+  function rowAction(act, id) {
+    const row = result.rows.find((x) => x.id === id);
+    if (!row) return;
+    const label = (row.전표번호 || row.거래처 || row.적요 || '추가 항목') + ' (' + (row.일자 || '날짜 오류') + ', ' + fmt(row.입금 || row.출금) + '원)';
+    if (act === 'exclude') {
+      excluded[id] = true;
+      $('editmsg').textContent = '🗑 ' + label + ' 행을 제외했어요. 합계·자금요청에서 빠졌고, ↩ 복원으로 되돌릴 수 있어요';
+    } else if (act === 'restore') {
+      delete excluded[id];
+      $('editmsg').textContent = '↩ ' + label + ' 행을 복원했어요';
+    } else if (act === 'del') {
+      const uid = parseInt(id.slice(3), 10);
+      extraRows = extraRows.filter((x) => x.uid !== uid);
+      delete dateEdits[1000000 + uid];
+      $('editmsg').textContent = '🗑 직접 추가했던 ' + label + ' 항목을 삭제했어요';
+    }
+    finalEdited = false;
+    recompute();
+  }
+
+  // 누락 항목 직접 추가
+  function addRow() {
+    const msg = (t) => { $('addmsg').textContent = t; };
+    const iso = DD.normDate($('adate').value);
+    if (!iso) return msg('⚠️ 일자를 골라 주세요');
+    const amt = numInput('aamt');
+    if (!okNum(amt) || amt <= 0) return msg('⚠️ 금액을 0보다 큰 숫자로 입력해 주세요');
+    const isIn = $('atype').value === 'in';
+    extraRows.push({ uid: nextUid++, 일자: iso, 거래처: $('aname').value.trim(), 적요: $('amemo').value.trim(), 입금: isIn ? amt : 0, 출금: isIn ? 0 : amt });
+    $('aamt').value = ''; $('aname').value = ''; $('amemo').value = '';
+    msg('✅ ' + iso + ' ' + (isIn ? '입금' : '출금') + ' ' + fmt(amt) + '원을 추가했어요 (표에서 🗑 삭제로 지울 수 있어요)');
+    $('editmsg').textContent = '';
+    finalEdited = false;
+    recompute();
+  }
+  function resetEdits() {
+    dateEdits = {}; excluded = {}; extraRows = []; nextUid = 1; checked = {};
+    $('editmsg').textContent = ''; $('addmsg').textContent = '';
+  }
+
+  // 일자 더블클릭 수정: Enter 저장 / Esc 취소 / 칸 밖을 누르면 취소
+  function startEdit(td) {
+    if (td.querySelector('input')) return;
+    const src = parseInt(td.dataset.src, 10);
+    const row = result.rows.find((x) => x.srcRow === src);
+    if (!row) return;
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.value = row.일자 || '';
+    inp.placeholder = '2026-11-05';
+    inp.style.minWidth = '130px';
+    td.textContent = '';
+    td.appendChild(inp);
+    inp.focus(); inp.select();
+    let done = false;
+    const cancel = () => { if (done) return; done = true; renderRows(); };
+    const commit = () => {
+      const iso = DD.normDate(inp.value);
+      if (!iso) {
+        inp.style.borderColor = 'var(--coral)';
+        inp.value = '';
+        inp.placeholder = '예: 2026-11-05';
+        return;
+      }
+      done = true;
+      if (iso === row.일자) { renderRows(); return; }
+      if (iso === row.origDate) delete dateEdits[src]; else dateEdits[src] = iso;
+      $('editmsg').textContent = '✏️ ' + (row.전표번호 || row.거래처 || '추가 항목') + ' 일자를 ' + (row.일자 || '오류') + ' → ' + iso + '(으)로 바꿨어요';
+      finalEdited = false;
+      recompute();
+    };
+    inp.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); commit(); }
+      else if (e.key === 'Escape') { e.preventDefault(); cancel(); }
+    });
+    inp.addEventListener('blur', () => setTimeout(cancel, 150));
+  }
+
+  function renderDaily() {
+    const sel = $('fdate').value;
+    const tc = result.daily.reduce((s, d) => s + d.count, 0);
+    const ti = result.daily.reduce((s, d) => s + d.inc, 0);
+    const to = result.daily.reduce((s, d) => s + d.out, 0);
+    const totalRow = result.daily.length
+      ? '<tr class="tot"><td>합계</td><td>' + tc + '건</td><td class="n">' + fmt(ti) + '</td><td class="n">' + fmt(to) + '</td></tr>' : '';
+    $('daily').innerHTML = result.daily.map((d) =>
+      '<tr class="pick' + (d.date === sel ? ' sel' : '') + '" data-d="' + esc(d.date) + '"><td>' + esc(d.date) + ' (' + dow(d.date) + ')' + (d.flagged ? ' 👀' : '') + '</td><td>' + d.count + '건</td>' +
+      '<td class="n">' + fmt(d.inc) + '</td><td class="n">' + fmt(d.out) + '</td></tr>').join('') + totalRow;
+    $('daily').querySelectorAll('tr.pick').forEach((tr) => tr.addEventListener('click', () => {
+      $('fdate').value = tr.dataset.d; finalEdited = false; touch(); renderFund();
+    }));
+  }
+
+  function renderFund() {
+    const box = $('fundout'), fin = $('finalrow');
+    lastFund = null;
+    if (!result) { box.innerHTML = ''; fin.classList.add('hidden'); $('daily').innerHTML = ''; return; }
+    renderDaily();
+    const info = (t) => { fin.classList.add('hidden'); box.innerHTML = '<div class="alert a-info" style="margin:0"><span class="face">🐰</span><div>' + t + '</div></div>'; };
+    const date = $('fdate').value;
+    const prev = numInput('fprev');
+    const target = numInput('ftarget');
+    const unit = parseInt($('funit').value, 10);
+    if (!date) return info('요청일을 골라 주세요!');
+    if (!okNum(prev)) return info('전일잔액을 입력하면 요청시재를 계산해 드려요!');
+    if (!okNum(target)) return info('목표 잔액을 숫자로 입력해 주세요!');
+    let finalV;
+    if (finalEdited) { const v = numInput('ffinal'); if (okNum(v)) finalV = v; }
+    const f = DD.fundRequest(result.rows, { date, prevBal: prev, target, unit, final: finalV });
+    if (!finalEdited) $('ffinal').value = fmt(f.final);
+    lastFund = f;
+    const notes = [];
+    if (!f.count) notes.push('📅 ' + esc(date) + ' 날짜의 행이 파일에 없어서 입금·출금을 0원으로 계산했어요.');
+    if (f.flagged) notes.push('👀 이 날짜에 중복 의심·변환 오류 행이 ' + f.flagged + '개 있어서 금액이 맞는지 확인해 주세요.');
+    if (f.exact < 0) notes.push('✨ 이미 목표 잔액을 ' + fmt(-f.exact) + '원 넘어서 <b>요청할 금액이 없어요</b>. 본사에 역송하려면 아래 최종 요청시재에 마이너스(−)로 입력하세요 (예: −' + fmt(-f.exact) + ').');
+    const unitName = unit >= 1000000 ? '백만' : unit >= 100000 ? '십만' : '만';
+    box.innerHTML =
+      '<div class="summary compact" style="margin-bottom:10px">' +
+      '<div class="stat s-mint"><small>요청일 입금 합계 · ' + f.count + '건</small><strong>' + fmt(f.inc) + '원</strong></div>' +
+      '<div class="stat s-peach"><small>요청일 출금 합계</small><strong>' + fmt(f.out) + '원</strong></div>' +
+      '<div class="stat s-lav"><small>요청시재 (계산값)</small><strong>' + fmt(Math.max(f.exact, 0)) + '원</strong></div>' +
+      '<div class="stat s-pink"><small>요청시재 (' + unitName + ' 원 단위 올림)</small><strong>' + fmt(f.rounded) + '원</strong></div></div>' +
+      notes.map((n) => '<div class="tag" style="margin-top:6px">' + n + '</div>').join('');
+    fin.classList.remove('hidden');
+    const d = f.diffTarget;
+    $('finalout').innerHTML = (f.final < 0 ? '본사에 ' + fmt(-f.final) + '원을 역송하면 예상 잔액 <b>' : '이 금액으로 요청하면 예상 잔액 <b>') + fmt(f.afterFinal) + '원</b> (목표 ' + fmt(f.target) + '원' +
+      (d === 0 ? '과 <b>딱 맞아요</b>' : '보다 <b>' + (d > 0 ? fmt(d) + '원 더 남아요' : fmt(-d) + '원 덜 남아요') + '</b>') + ')';
+  }
+
+  // ---- 저장 / 불러오기 (이 브라우저의 localStorage, 원본 파일 내용은 저장하지 않음) ----
+  function touch() { dirty = true; updSave(); }
+  function updSave() {
+    const s = $('savestat');
+    if (!table) { s.textContent = ''; return; }
+    if (dirty) { s.textContent = '● 저장 안 된 변경이 있어요'; s.style.color = '#B2402F'; }
+    else if (savedAt) { s.textContent = '✓ 저장됨 · ' + savedAt; s.style.color = 'var(--mint-d)'; }
+    else { s.textContent = '아직 저장하지 않았어요'; s.style.color = 'var(--sub)'; }
+  }
+  function makeFp(name) {
+    const sum = (f) => (map && map[f] >= 0 ? table.rows.reduce((a, r) => { const v = DD.normAmount(r[map[f]]); return a + (Number.isNaN(v) ? 0 : v); }, 0) : 0);
+    return name + '|' + table.rows.length + '|' + sum('입금') + '|' + sum('출금');
+  }
+  function stamp() {
+    const d = new Date(), p = (n) => String(n).padStart(2, '0');
+    return (d.getMonth() + 1) + '/' + d.getDate() + ' ' + p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds());
+  }
+  function saveWork() {
+    if (!table) { $('savestat').textContent = '먼저 파일을 넣어 주세요'; return; }
+    const st = stamp();
+    const data = {
+      dateEdits, excluded, extraRows, nextUid, checked,
+      fprev: $('fprev').value, ftarget: $('ftarget').value, funit: $('funit').value, fdate: $('fdate').value,
+      ffinal: finalEdited ? $('ffinal').value : null, savedAt: st, savedMs: Date.now(),
+    };
+    const all = store.get('work', {});
+    all[fp] = data;
+    const keys = Object.keys(all);
+    if (keys.length > 10) { keys.sort((a, b) => (all[a].savedMs || 0) - (all[b].savedMs || 0)); keys.slice(0, keys.length - 10).forEach((k) => delete all[k]); }
+    if (store.set('work', all)) {
+      dirty = false; savedAt = st; updSave();
+      const b = $('save'); b.textContent = '✓ 저장했어요!';
+      setTimeout(() => { b.textContent = '💾 저장'; }, 1500);
+    } else {
+      downloadWork(data, st); // 브라우저 저장이 막혀 있으면 작업 파일로 대신 저장
+    }
+  }
+  function downloadWork(data, st) {
+    try {
+      const blob = new Blob([JSON.stringify({ app: 'ddokddak-work', version: 1, fp, data })], { type: 'application/json' });
+      const d = new Date(), p = (n) => String(n).padStart(2, '0');
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = '작업저장_' + d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '_' + p(d.getHours()) + p(d.getMinutes()) + '.json';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+      dirty = false; savedAt = st;
+      const s = $('savestat');
+      s.textContent = '✓ 브라우저 저장이 막혀 있어서 작업 파일로 저장했어요 (다운로드 폴더) · ' + st;
+      s.style.color = 'var(--mint-d)';
+    } catch (e) {
+      $('savestat').textContent = '⚠️ 저장하지 못했어요. 엑셀로 내려받아 보관해 주세요';
+      $('savestat').style.color = '#B2402F';
+    }
+  }
+  function applyWork(w) {
+    dateEdits = w.dateEdits || {}; excluded = w.excluded || {}; extraRows = w.extraRows || []; nextUid = w.nextUid || 1; checked = w.checked || {};
+    $('fprev').value = w.fprev || ''; $('ftarget').value = w.ftarget || '5,000,000'; $('funit').value = w.funit || '10000'; $('fdate').value = w.fdate || '';
+    finalEdited = w.ffinal !== null && w.ffinal !== undefined;
+    if (finalEdited) $('ffinal').value = w.ffinal;
+    recompute();
+    dirty = false; savedAt = w.savedAt || ''; updSave();
+    $('editmsg').textContent = '💾 저장된 작업을 불러왔어요 (' + (w.savedAt || '') + ')';
+  }
+  function afterLoad(name) {
+    fp = makeFp(name);
+    dirty = false; savedAt = ''; updSave();
+    const w = store.get('work', {})[fp];
+    const bar = $('restorebar');
+    if (!w) { bar.classList.add('hidden'); return; }
+    bar.classList.remove('hidden');
+    bar.innerHTML = '<span class="face">💾</span><div><b>이 파일의 저장된 작업이 있어요</b> (저장: ' + esc(w.savedAt || '') + ')<br>불러오면 일자 수정·제외·추가 항목·심사완료 체크·입력값이 그대로 돌아와요.</div>' +
+      '<div class="btns" style="margin-left:auto"><button class="b3 small" id="rload">불러오기</button><button class="b2 small" id="rskip">무시</button></div>';
+    $('rload').onclick = () => { applyWork(w); bar.classList.add('hidden'); };
+    $('rskip').onclick = () => bar.classList.add('hidden');
+  }
+  $('save').addEventListener('click', saveWork);
+  $('loadwork').addEventListener('click', () => $('workfile').click());
+  $('workfile').addEventListener('change', () => {
+    const f = $('workfile').files[0];
+    $('workfile').value = '';
+    if (!f) return;
+    const warn = (t) => { $('savestat').textContent = '⚠️ ' + t; $('savestat').style.color = '#B2402F'; };
+    f.text().then((t) => {
+      let j = null;
+      try { j = JSON.parse(t); } catch (e) { j = null; }
+      if (!j || j.app !== 'ddokddak-work' || !j.data) return warn('이 프로그램에서 저장한 작업 파일이 아니에요');
+      if (!table) return warn('먼저 원본 엑셀 파일을 넣은 뒤 불러와 주세요');
+      if (j.fp !== fp && !confirm('저장했을 때의 원본 파일과 달라 보여요. 그래도 불러올까요?')) return;
+      applyWork(j.data);
+    });
+  });
+  document.addEventListener('keydown', (e) => { if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) { e.preventDefault(); saveWork(); } });
+  window.addEventListener('beforeunload', (e) => { if (dirty && table) { e.preventDefault(); e.returnValue = ''; } });
+
+  // 금액 입력칸: 숫자를 치는 즉시 세 자리마다 쉼표(커서 위치 유지). 전일잔액만 마이너스 허용
+  function moneyInput(id, allowNeg) {
+    const inp = $(id);
+    inp.addEventListener('input', () => {
+      const raw = inp.value;
+      const pos = inp.selectionStart === null ? raw.length : inp.selectionStart;
+      const neg = !!allowNeg && /^\s*[-−]/.test(raw);
+      const before = raw.slice(0, pos).replace(/\D/g, '').length;
+      const digits = raw.replace(/\D/g, '').replace(/^0+(?=\d)/, '');
+      if (!digits) { inp.value = neg ? '-' : ''; return; }
+      const text = (neg ? '-' : '') + digits.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+      inp.value = text;
+      let seen = 0, caret = text.length;
+      if (before === 0) caret = neg ? 1 : 0;
+      else {
+        for (let i = 0; i < text.length; i++) {
+          if (/\d/.test(text[i])) seen += 1;
+          if (seen === before) { caret = i + 1; break; }
+        }
+      }
+      try { inp.setSelectionRange(caret, caret); } catch (e) { /* 지원 안 되는 환경 */ }
+    });
+  }
+  moneyInput('fprev', true);
+  moneyInput('ftarget');
+  moneyInput('ffinal', true);
+  moneyInput('aamt');
+
+  // 파일 입력
+  const drop = $('drop'), file = $('file');
+  drop.addEventListener('click', () => file.click());
+  ['dragenter', 'dragover'].forEach((e) => drop.addEventListener(e, (ev) => { ev.preventDefault(); drop.classList.add('over'); }));
+  ['dragleave', 'drop'].forEach((e) => drop.addEventListener(e, (ev) => { ev.preventDefault(); drop.classList.remove('over'); }));
+  drop.addEventListener('drop', (ev) => { const f = ev.dataTransfer.files[0]; if (f) f.arrayBuffer().then((b) => loadBuffer(b, f.name)); });
+  file.addEventListener('change', () => { const f = file.files[0]; if (f) f.arrayBuffer().then((b) => loadBuffer(b, f.name)); });
+
+  // 자금요청 입력
+  ['fdate', 'fprev', 'ftarget', 'funit'].forEach((id) => {
+    const h = () => { finalEdited = false; touch(); renderFund(); };
+    $(id).addEventListener('input', h); $(id).addEventListener('change', h);
+  });
+  $('ffinal').addEventListener('input', () => { finalEdited = true; touch(); renderFund(); });
+  const step = (dir) => {
+    const unit = parseInt($('funit').value, 10);
+    const cur = numInput('ffinal');
+    $('ffinal').value = fmt((okNum(cur) ? cur : 0) + dir * unit);
+    finalEdited = true; touch(); renderFund();
+  };
+  $('fminus').addEventListener('click', () => step(-1));
+  $('fplus').addEventListener('click', () => step(1));
+  $('freset').addEventListener('click', () => { finalEdited = false; touch(); renderFund(); });
+
+  // 가상 샘플 (실제 데이터 아님)
+  $('sample').addEventListener('click', () => {
+    table = {
+      sheetName: '가상샘플',
+      headers: ['전표번호', '일자', '거래처', '입금', '출금', '적요'],
+      rows: [
+        ['V003', '2026-11-03', '가상상사C', '830,000', null, '매출입금'],
+        ['V001', '2026-11-02', '가상상사A', 1200000, null, '매출입금'],
+        ['V002', '2026-11-03', '가상상사B', null, '450,000', '외주비'],
+        ['V005', '2026-11-06', '가상상사E', 560000, null, '매출입금'],
+        ['V004', '2026-11-05', '가상상사D', null, 12000, '수수료'],
+        ['V005', '2026-11-06', '가상상사E', 560000, null, '매출입금'],
+        ['V006', '2026-11-09', '가상상사F', null, 980000, '임차료'],
+      ],
+    };
+    map = DD.autoMap(table.headers);
+    $('fdate').value = ''; finalEdited = false; resetEdits();
+    $('fname').textContent = '가상 샘플 (7행)';
+    renderMap();
+    recompute();
+    afterLoad('가상 샘플');
+  });
+
+  $('undoedits').addEventListener('click', () => { dateEdits = {}; $('editmsg').textContent = '↺ 일자 수정을 모두 되돌렸어요'; finalEdited = false; recompute(); });
+  $('addtoggle').addEventListener('click', () => {
+    const f = $('addform');
+    f.classList.toggle('hidden');
+    if (!f.classList.contains('hidden') && !$('adate').value) {
+      $('adate').value = $('fdate').value || (result && result.daily.length ? result.daily[result.daily.length - 1].date : '');
+    }
+  });
+  $('adddo').addEventListener('click', addRow);
+  $('addcancel').addEventListener('click', () => $('addform').classList.add('hidden'));
+  ['aamt', 'aname', 'amemo'].forEach((id) => $(id).addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); addRow(); } }));
+  $('onlyflag').addEventListener('click', () => { onlyFlag = !onlyFlag; if (result) renderRows(); });
+  $('dl').addEventListener('click', () => {
+    if (!result) return;
+    const bytes = DD.buildXlsx(result, checked, lastFund);
+    const blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const d = new Date();
+    const stamp = d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = '정리결과_' + stamp + '.xlsx';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    setStep(3);
+  });
+})();
+</script>
+</body>
+</html>
